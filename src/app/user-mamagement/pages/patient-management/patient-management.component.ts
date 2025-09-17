@@ -74,13 +74,6 @@ export class PatientManagementComponent implements OnInit {
       case 'appointments':
         this.router.navigate([`/patient-management/${patient.id}/patient-appointment-list`]).then();
         break;
-      case 'history':
-        if (patient.professionalId) {
-          this.router.navigate([`/patient-management/${patient.id}/clinical-history/${patient.id}`]).then();
-        } else {
-          console.error(`Clinical history ID is missing for patient ID: ${patient.id}`);
-        }
-        break;
       default:
         console.error(`Unhandled feature: ${featureName}`);
     }
