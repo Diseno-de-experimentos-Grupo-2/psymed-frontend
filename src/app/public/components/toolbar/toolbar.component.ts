@@ -93,8 +93,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
         if (role === 'ROLE_PROFESSIONAL' && accountId) {
           this.options = [
             { path: '/patient-management', name: 'patient-management' },
-            { path: '/appointment-list', name: 'appointments' },
-            { path: `/professional/profile/${accountId}`, name: 'profile' },
             { path: '/login', name: 'logout' }
           ];
         } else if (role === 'ROLE_PATIENT' && accountId) {
@@ -103,7 +101,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
             { path: '/biological-functions', name: 'biological-functions' },
             { path: `/patient/prescription/${accountId}`, name: 'prescription' },
             { path: `/patient/appointment-list`, name: 'appointments' },
-            { path: `/patient/profile/${accountId}`, name: 'profile' },
             { path: '/login', name: 'logout' }
           ];
         } else {

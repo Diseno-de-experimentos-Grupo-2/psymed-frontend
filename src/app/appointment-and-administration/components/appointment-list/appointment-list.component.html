@@ -12,9 +12,6 @@
         </p>
       </div>
       <div class="professional-details">
-        <p *ngIf="userRole === 'ROLE_PROFESSIONAL'">
-          <strong>{{ "pages.appointments.data.patient"  | translate }}</strong> {{ session.patientName || 'Loading...' }}
-        </p>
         <p *ngIf="userRole === 'ROLE_PATIENT'">
           <strong>{{ "pages.appointments.data.patient"  | translate }}</strong> {{ entityName }}
         </p>

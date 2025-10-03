@@ -57,7 +57,7 @@ export class MoodFormComponent implements OnInit, OnDestroy {
     const profileId = localStorage.getItem("profileId");
     const token = localStorage.getItem("authToken");
     const parsedProfileId = profileId ? Number(profileId) : null;
-    console.log("profile id en mood fomr : ", parsedProfileId);
+    console.log("profile id en mood form : ", parsedProfileId);
     console.log("mood value into mood form : ", mood);
     const moodState = new MoodState(0, parsedProfileId, mood);
     this.moodStateService.createMoodState(moodState, token);
