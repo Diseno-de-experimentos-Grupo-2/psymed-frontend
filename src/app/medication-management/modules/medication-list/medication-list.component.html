@@ -6,8 +6,6 @@
     <mat-card-content>
       <p>{{"pages.prescription.description" | translate}}: {{ medication.description }}</p>
       <p>{{"pages.prescription.quantity" | translate}}: {{ medication.quantity }}</p>
-      <p>{{"pages.prescription.start-date" | translate}} Date: {{ medication.startDate | date }}</p>
-      <p>{{"pages.prescription.end-date" | translate}}: {{ medication.endDate | date }}</p>
       <p>{{"pages.prescription.interval" | translate}}: {{ medication.interval }}</p>
       <div *ngIf="role === '1'" style="display: flex; gap: 1em;">
         <mat-icon *ngIf="medication.status === 0">close</mat-icon>
@@ -18,4 +16,3 @@
     </mat-card-content>
   </mat-card>
 </div>
-

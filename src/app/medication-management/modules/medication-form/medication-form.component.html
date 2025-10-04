@@ -21,20 +21,6 @@
       <input matInput formControlName="quantity" type="number">
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
-      <mat-label>{{"pages.patient-management.actions.add-medication.start-date" | translate}}</mat-label>
-      <input matInput [matDatepicker]="startDatePicker" formControlName="startDate">
-      <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
-      <mat-datepicker #startDatePicker></mat-datepicker>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill">
-      <mat-label>{{"pages.patient-management.actions.add-medication.end-date" | translate}}</mat-label>
-      <input matInput [matDatepicker]="endDatePicker" formControlName="endDate">
-      <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
-      <mat-datepicker #endDatePicker></mat-datepicker>
-    </mat-form-field>
-
     <button mat-raised-button color="primary" type="submit">{{"pages.patient-management.actions.add-medication.save-button" | translate}}</button>
   </form>
 </div>
