@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BaseService } from "../../shared/services/base.service";
 import { Task } from "../model/task.entity";
-import {Observable, of, retry} from "rxjs";
-import { catchError, map } from "rxjs/operators";
+import {Observable, retry} from "rxjs";
+import { catchError } from "rxjs/operators";
+import {HttpHeaders} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
@@ -11,54 +12,103 @@ export class TaskService extends BaseService<Task> {
 
   constructor() {
     super();
-    this.resourceEndpoint = '/task';
+    // Tasks are nested under sessions, so we don't set a base resource endpoint here
+    this.resourceEndpoint = '';
   }
 
-  public getTasksByPatientId(idPatient: number): Observable<Task[]> {
-    return this.http.get<Task[]>(`${this.resourcePath()}?idPatient=${idPatient}`, this.httpOptions)
-      .pipe(retry(2), catchError(this.handleError));
-  }
-
-  public getTaskBySessionId(idSession: number): Observable<Task[]> {
-    console.log("Fetching tasks for session ID:", idSession); // Debugging
-    return this.http.get<Task[]>(`${this.resourcePath()}?idSession=${idSession}`, this.httpOptions)
-      .pipe(retry(2), catchError(this.handleError));
-  }
-
-  // New method to get the next available task ID
-  public getNextTaskId(): Observable<string> {
-    return this.http.get<Task[]>(this.resourcePath(), this.httpOptions).pipe(
-      map((tasks: Task[]) => {
-        const maxId = tasks.reduce((max, task) => Math.max(max, parseInt(String(task.id), 10)), 0);
-        return (maxId + 1).toString();
-      }),
-      catchError((error) => {
-        console.error('Error fetching tasks:', error);
-        return of("1"); // Start from 1 if an error occurs
+  /**
+   * Get all tasks for a specific patient across all sessions
+   * GET /api/v1/patients/{patientId}/tasks
+   */
+  public getTasksByPatientId(patientId: number, token: string): Observable<Task[]> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       })
-    );
+    };
+    const url = `${this.basePath}/patients/${patientId}/tasks`;
+    return this.http.get<Task[]>(url, httpOptions)
+      .pipe(retry(2), catchError(this.handleError));
   }
 
-  public changeTaskStatusById(taskId: string): void {
-    this.getById(taskId).subscribe({
-      next: (task: Task) => {
-        if (!task) {
-          console.error(`Task with ID ${taskId} not found.`);
-          return;
-        }
-        task.status = task.status === 0 ? 1 : 0;
-        this.update(task.id, task).subscribe({
-          next: (updatedTask: Task) => {
-            console.log(`Task status updated successfully:`, updatedTask);
-          },
-          error: (error) => {
-            console.error(`Error updating task status:`, error);
-          }
-        });
-      },
-      error: (error) => {
-        console.error(`Error fetching task:`, error);
-      }
-    });
+  /**
+   * Get all tasks for a specific session
+   * GET /api/v1/sessions/{sessionId}/tasks
+   */
+  public getTaskBySessionId(sessionId: number, token: string): Observable<Task[]> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+    const url = `${this.basePath}/sessions/${sessionId}/tasks`;
+    return this.http.get<Task[]>(url, httpOptions)
+      .pipe(retry(2), catchError(this.handleError));
+  }
+
+  /**
+   * Create a new task for a session
+   * POST /api/v1/sessions/{sessionId}/tasks
+   */
+  public createTask(sessionId: number, task: {title: string, description: string}, token: string): Observable<Task> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+    const url = `${this.basePath}/sessions/${sessionId}/tasks`;
+    return this.http.post<Task>(url, JSON.stringify(task), httpOptions)
+      .pipe(retry(2), catchError(this.handleError));
+  }
+
+  /**
+   * Update a task
+   * PUT /api/v1/sessions/{sessionId}/tasks/{taskId}
+   */
+  public updateTask(sessionId: number, taskId: number, task: {title?: string, description?: string}, token: string): Observable<Task> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+    const url = `${this.basePath}/sessions/${sessionId}/tasks/${taskId}`;
+    return this.http.put<Task>(url, JSON.stringify(task), httpOptions)
+      .pipe(retry(2), catchError(this.handleError));
+  }
+
+  /**
+   * Delete a task
+   * DELETE /api/v1/sessions/{sessionId}/tasks/{taskId}
+   */
+  public deleteTask(sessionId: number, taskId: number, token: string): Observable<void> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+    const url = `${this.basePath}/sessions/${sessionId}/tasks/${taskId}`;
+    return this.http.delete<void>(url, httpOptions)
+      .pipe(retry(2), catchError(this.handleError));
+  }
+
+  /**
+   * Mark a task as completed
+   * POST /api/v1/sessions/{sessionId}/tasks/{taskId}/complete
+   */
+  public completeTask(sessionId: number, taskId: number, token: string): Observable<string> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+    const url = `${this.basePath}/sessions/${sessionId}/tasks/${taskId}/complete`;
+    return this.http.post<string>(url, {}, httpOptions)
+      .pipe(retry(2), catchError(this.handleError));
   }
 }

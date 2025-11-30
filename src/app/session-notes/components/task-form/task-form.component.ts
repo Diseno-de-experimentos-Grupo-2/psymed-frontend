@@ -49,24 +49,31 @@ export class TaskFormComponent implements OnInit {
 
   onSubmit(): void {
     if (this.taskForm.valid) {
-      // Get the next available task ID before creating the task
-      this.taskService.getNextTaskId().subscribe(nextId => {
-        const formValues = this.taskForm.value;
+      const formValues = this.taskForm.value;
+      const token = localStorage.getItem('authToken') || '';
+      
+      // Use the new createTask method
+      this.taskService.createTask(this.appointmentId, {
+        title: formValues.title,
+        description: formValues.description
+      }, token).subscribe((response: any) => {
+        console.log('Task created successfully', response);
+        // Map response to Task entity format for compatibility
+        // Backend returns taskId, but Task entity uses id
+        const taskId = (response as any).taskId || response.id;
         const newTask = new Task({
-          id: nextId,
+          id: taskId?.toString() || '',
           idPatient: this.id,
           idSession: this.appointmentId,
-          title: formValues.title,
-          description: formValues.description,
-          status: 0,
+          title: response.title,
+          description: response.description,
+          status: response.status || 0,
           createdAt: new Date(),
           updatedAt: new Date()
         });
-
-        this.taskService.create(newTask).subscribe(response => {
-          console.log('Task created successfully', response);
-          this.taskCreated.emit(newTask);
-        });
+        this.taskCreated.emit(newTask);
+      }, error => {
+        console.error('Error creating task:', error);
       });
     }
   }

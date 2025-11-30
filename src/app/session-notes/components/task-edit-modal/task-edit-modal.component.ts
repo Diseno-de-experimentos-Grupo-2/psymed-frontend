@@ -54,8 +54,15 @@ export class TaskEditModalComponent implements OnInit {
 
   onSubmit(): void {
     if (this.taskForm.valid) {
-      const updatedTask = { ...this.data, ...this.taskForm.value };
-      this.taskService.update(updatedTask.id, updatedTask).subscribe({
+      const token = localStorage.getItem('authToken') || '';
+      const sessionId = this.data.idSession;
+      const taskId = Number(this.data.id);
+      
+      // Use the new updateTask method
+      this.taskService.updateTask(sessionId, taskId, {
+        title: this.taskForm.value.title,
+        description: this.taskForm.value.description
+      }, token).subscribe({
         next: (response) => {
           console.log('Task updated:', response);
           this.dialogRef.close(response);

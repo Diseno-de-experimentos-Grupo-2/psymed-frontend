@@ -44,7 +44,11 @@ export class TaskCardComponent implements OnInit {
 
 
   deleteThisCard(taskId: string): void{
-    this.taskService.delete(taskId).subscribe(
+    const token = localStorage.getItem('authToken') || '';
+    const sessionId = this.task.idSession;
+    const taskIdNum = Number(this.task.id);
+    
+    this.taskService.deleteTask(sessionId, taskIdNum, token).subscribe(
       () => {
         console.log(`Task with id ${taskId} deleted successfully`);
         this.taskDeleted.emit(taskId);
@@ -57,7 +61,20 @@ export class TaskCardComponent implements OnInit {
   }
 
   toggleStatus(): void {
-    this.taskService.changeTaskStatusById(this.task.id)
+    const token = localStorage.getItem('authToken') || '';
+    const sessionId = this.task.idSession;
+    const taskId = Number(this.task.id);
+    
+    this.taskService.completeTask(sessionId, taskId, token).subscribe({
+      next: () => {
+        // Toggle status locally
+        this.task.status = this.task.status === 0 ? 1 : 0;
+        console.log('Task status updated');
+      },
+      error: (error) => {
+        console.error('Error updating task status:', error);
+      }
+    });
   }
 
   ngOnInit() {

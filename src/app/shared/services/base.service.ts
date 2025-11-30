@@ -1,7 +1,7 @@
   import {HttpClient, HttpErrorResponse, HttpHeaders} from "@angular/common/http";
   import {inject} from "@angular/core";
   import {catchError, Observable, retry, throwError} from "rxjs";
-  import {environment} from "../../../environments/environment.development";
+  import {environment} from "../../../environments/environment";
 
   export class BaseService <T> {
 

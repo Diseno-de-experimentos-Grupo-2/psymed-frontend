@@ -48,13 +48,27 @@ export class NoteFormComponent {
   //#region Service Method
 
   createNote(): void {
-    // Get the next available note ID and create the note
-    this.noteService.getNextNoteId().subscribe((nextId: string) => {
-      const note = this.constructSessionNoteObject(nextId);
-      this.noteService.create(note).subscribe((createdNote: SessionNote) => {
-        this.noteAdded.emit(createdNote);
-        console.log('Note created successfully');
-      });
+    const token = localStorage.getItem('authToken') || '';
+    const sessionId = Number(this.sessionId);
+    
+    // Use the new createNote method
+    this.noteService.createNote(sessionId, {
+      title: this.noteForm.value.title || '',
+      description: this.noteForm.value.description || ''
+    }, token).subscribe((createdNote: SessionNote) => {
+      // Map response to SessionNote entity format for compatibility
+      const note = new SessionNote(
+        this.patientId,
+        this.sessionId,
+        createdNote.title || this.noteForm.value.title || '',
+        createdNote.description || this.noteForm.value.description || '',
+        new Date().toISOString(),
+        createdNote.id?.toString() || ''
+      );
+      this.noteAdded.emit(note);
+      console.log('Note created successfully');
+    }, error => {
+      console.error('Error creating note:', error);
     });
   }
 

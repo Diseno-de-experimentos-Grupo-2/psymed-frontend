@@ -28,4 +28,22 @@ export class ProfessionalService extends BaseService <ProfessionalProfile> {
       );
   }
 
+  /**
+   * Get professional profile by account ID
+   * GET /api/v1/professional-profiles/account/{accountId}
+   */
+  public getProfessionalByAccountId(accountId: number, token: string): Observable<ProfessionalProfile> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      })
+    };
+
+    return this.http.get<ProfessionalProfile>(`${this.resourcePath()}/account/${accountId}`, httpOptions)
+      .pipe(
+        retry(2),
+        catchError(this.handleError)
+      );
+  }
 }

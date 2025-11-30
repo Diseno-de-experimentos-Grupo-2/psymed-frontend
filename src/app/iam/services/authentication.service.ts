@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { environment } from "../../../environments/environment.development";
+import { environment } from "../../../environments/environment";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Store } from "@ngrx/store";
 import { ActivatedRoute } from "@angular/router";
@@ -25,27 +25,37 @@ export class AuthenticationService {
   ) {}
 
   signIn(signInRequest: SignInRequest) {
-    return this.http.post<SignInResponse>(`${this.basePath}/authentication/sign-in`, signInRequest, this.httpOptions).pipe(
+    // Send as plain object to ensure proper JSON serialization
+    const requestBody = {
+      username: signInRequest.username,
+      password: signInRequest.password
+    };
+    
+    console.log('Sign-in request:', requestBody);
+    console.log('Sign-in endpoint:', `${this.basePath}/authentication/sign-in`);
+    
+    return this.http.post<SignInResponse>(`${this.basePath}/authentication/sign-in`, requestBody, this.httpOptions).pipe(
       tap((response: SignInResponse) => {
-        const storedRole = localStorage.getItem('role');
-        if (storedRole && storedRole !== response.role) {
-          throw new Error(`Role mismatch: Stored role is ${storedRole}, but account role is ${response.role}`);
-        }
+        console.log("Sign-in response:", response);
         console.log("Token for sign-in:", response.token);
-
-        // Store session data
+        // Store session data - role will be fetched from account
         this.storeSessionData(response);
       })
     );
   }
 
   signUp(signUpRequest: SignUpRequest, role: string) {
-    const endpoint =
-      role === 'ROLE_PROFESSIONAL'
-        ? `${this.basePath}/professional-profiles`
-        : `${this.basePath}/patient-profiles`;
+    // Use the authentication sign-up endpoint as documented in the API
+    const endpoint = `${this.basePath}/authentication/sign-up`;
+    
+    // The backend expects: {username, password, role}
+    const signUpPayload = {
+      username: signUpRequest.username,
+      password: signUpRequest.password,
+      role: role
+    };
 
-    return this.http.post<SignUpResponse>(endpoint, signUpRequest, this.httpOptions).pipe(
+    return this.http.post<SignUpResponse>(endpoint, signUpPayload, this.httpOptions).pipe(
       tap((response: SignUpResponse) => {
         localStorage.setItem('role', response.role);
         localStorage.setItem('profileId', response.id.toString());
@@ -79,16 +89,53 @@ export class AuthenticationService {
     localStorage.setItem('authToken', response.token);
     this.store.dispatch(setJwtToken({ jwtToken: response.token }));
 
-    const role = this.route.snapshot.queryParamMap.get('role') || response.role;
-    console.log("Role from sign-in:", role);
+    // First, get the account to retrieve the role
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${response.token}`
+      })
+    };
 
-    this.getProfileId(response.id, response.token, role).subscribe(profileId => {
-      localStorage.setItem('role', response.role);
-      localStorage.setItem('profileId', profileId);
+    // Fetch account to get role
+    this.http.get<{ id: number, username: string, role: string }>(`${this.basePath}/accounts/${response.id}`, httpOptions).subscribe(
+      (account) => {
+        const role = account.role;
+        console.log("Role from account:", role);
 
-      this.store.dispatch(setRole({ rolId: response.role }));
-      this.store.dispatch(setProfileId({ profileId: Number(profileId) }));
-    });
+        // Now get the profile ID using the role
+        this.getProfileId(response.id, response.token, role).subscribe(
+          (profileId) => {
+            localStorage.setItem('role', role);
+            localStorage.setItem('profileId', profileId);
+
+            this.store.dispatch(setRole({ rolId: role }));
+            this.store.dispatch(setProfileId({ profileId: Number(profileId) }));
+          },
+          (error) => {
+            console.error('Error fetching profile ID:', error);
+            // Still store the role even if profile fetch fails
+            localStorage.setItem('role', role);
+            this.store.dispatch(setRole({ rolId: role }));
+          }
+        );
+      },
+      (error) => {
+        console.error('Error fetching account:', error);
+        // Fallback: try to use role from query params or stored role
+        const fallbackRole = this.route.snapshot.queryParamMap.get('role') || localStorage.getItem('role');
+        if (fallbackRole) {
+          this.getProfileId(response.id, response.token, fallbackRole).subscribe(
+            (profileId) => {
+              localStorage.setItem('role', fallbackRole);
+              localStorage.setItem('profileId', profileId);
+              this.store.dispatch(setRole({ rolId: fallbackRole }));
+              this.store.dispatch(setProfileId({ profileId: Number(profileId) }));
+            }
+          );
+        }
+      }
+    );
   }
 
   signOut(): void {

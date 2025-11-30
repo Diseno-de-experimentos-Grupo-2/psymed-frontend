@@ -13,18 +13,22 @@ export class MoodStateService extends BaseService<MoodState> {
     this.resourceEndpoint = '/patients';
   }
 
-  // Method to create a new mood state with a unique, sequential ID
+  // Method to create a new mood state
+  // POST /api/v1/patients/{patientId}/mood-states
   public createMoodState(moodState: MoodState, token: string | null): void {
     const httpOptions = {
       headers: new HttpHeaders({
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Mood': moodState.mood.toString()
+        'Authorization': `Bearer ${token}`
       })
     };
 
     const url = `${this.resourcePath()}/${moodState.idPatient}/mood-states`;
-    const requestBody = { status: moodState.mood };
+    // Backend expects: {mood: string, date: string}
+    const requestBody = {
+      mood: moodState.mood.toString(),
+      date: new Date().toISOString() // Use current date if not provided
+    };
     this.http.post(url, JSON.stringify(requestBody), httpOptions)
       .pipe(
         retry(2),
@@ -55,11 +59,4 @@ export class MoodStateService extends BaseService<MoodState> {
       .pipe(retry(2), catchError(this.handleError));
   }
 
-  // Fetch all mood states to determine the highest ID
-  public getAllMoodStates(): Observable<MoodState[]> {
-    console.log('Fetching all mood states...');
-    const url = this.resourcePath();
-    return this.http.get<MoodState[]>(url, this.httpOptions)
-      .pipe(retry(2), catchError(this.handleError));
-  }
 }

@@ -36,8 +36,9 @@ export class TaskListComponent implements OnInit {
     // Fetch session ID from route and load initial tasks
     const sessionId = Number(this.route.snapshot.paramMap.get('appointmentId'));
     this.sessionId = sessionId;
+    const token = localStorage.getItem('authToken') || '';
 
-    this.taskService.getTaskBySessionId(sessionId).subscribe((tasks: Task[]) => {
+    this.taskService.getTaskBySessionId(sessionId, token).subscribe((tasks: Task[]) => {
       this.length = tasks.length;
       this.tasks = tasks.slice(0, this.pageSize); // Load only the first page initially
     }, (error) => {
@@ -77,8 +78,9 @@ export class TaskListComponent implements OnInit {
   private paginate(pageIndex: number) {
     const startIndex = pageIndex * this.pageSize;
     const endIndex = startIndex + this.pageSize;
+    const token = localStorage.getItem('authToken') || '';
 
-    this.taskService.getTaskBySessionId(this.sessionId).subscribe((tasks: Task[]) => {
+    this.taskService.getTaskBySessionId(this.sessionId, token).subscribe((tasks: Task[]) => {
       this.tasks = tasks.slice(startIndex, endIndex); // Only fetch tasks for the current page
     }, (error) => {
       console.error('Error fetching tasks:', error);

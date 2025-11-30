@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseService } from "../../shared/services/base.service";
 import { Session } from "../model/sesion.entity";
 import { catchError, Observable, retry } from "rxjs";
-import {environment} from "../../../environments/environment.development";
+import {environment} from "../../../environments/environment";
 import {HttpHeaders} from "@angular/common/http";
 
 /**
@@ -102,9 +102,16 @@ export class SessionService extends BaseService<Session> {
       })
     };
 
-    console.log('Making reservation with URL:', url, 'and data:', sessionData);
+    // Backend expects: {appointmentDate: string, sessionTime: number}
+    // Map from Session entity to backend format
+    const requestBody = {
+      appointmentDate: sessionData.appointmentDate,
+      sessionTime: sessionData.sessionTime
+    };
 
-    return this.http.post<Session>(url, JSON.stringify(sessionData), httpOptions).pipe(
+    console.log('Making reservation with URL:', url, 'and data:', requestBody);
+
+    return this.http.post<Session>(url, JSON.stringify(requestBody), httpOptions).pipe(
       retry(2), // Retry on failure
       catchError(this.handleError) // Handle errors gracefully
     );

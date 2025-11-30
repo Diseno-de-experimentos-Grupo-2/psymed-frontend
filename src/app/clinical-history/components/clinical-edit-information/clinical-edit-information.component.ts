@@ -31,17 +31,26 @@ export class ClinicalEditInformationComponent implements OnInit{
   }
 
   loadClinicalHistory() {
-    const clinicalId = this.route.snapshot.params['clinicalHistoryId'];
-    this.clinicalHistoryService.getById(clinicalId).subscribe((clinicalHistory: ClinicalHistory) => {
-      this.clinicalHistory = clinicalHistory;
-    });
+    // Get patient ID from route - clinical history is fetched by patient ID
+    const patientId = this.route.snapshot.params['patientId'] || this.route.snapshot.params['id'];
+    const token = localStorage.getItem('authToken') || '';
+    
+    if (patientId) {
+      this.clinicalHistoryService.getClinicalHistoryByPatientId(Number(patientId), token).subscribe((clinicalHistory: ClinicalHistory) => {
+        this.clinicalHistory = clinicalHistory;
+      }, (error) => {
+        console.error('Error loading clinical history:', error);
+      });
+    }
     console.clear();
   }
 
   save() {
+    // Note: The API doesn't have an update endpoint for clinical history in the README
+    // This method may need to be adjusted based on actual backend implementation
     this.clinicalHistory.date = new Date().toLocaleDateString();
     console.log("the id for edit clinical history:" + this.clinicalHistory.id)
-    this.clinicalHistoryService.updateClinicalHistory(this.clinicalHistory);
+    // this.clinicalHistoryService.updateClinicalHistory(this.clinicalHistory);
     this.location.back();
   }
 }

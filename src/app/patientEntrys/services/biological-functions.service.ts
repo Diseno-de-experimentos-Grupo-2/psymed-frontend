@@ -17,7 +17,13 @@ export class BiologicalFunctionsService extends BaseService<BiologicalFunctions>
 
 
 
-  public createBiologicalFunctions(biologicalFunctions: BiologicalFunctions, token: string | null): void {
+  /**
+   * Create a biological function record
+   * POST /api/v1/patients/{patientId}/biological-functions
+   * Backend expects: {functionType: string, value: string, date: string}
+   * Note: Each function type (hunger, hydration, sleep, energy) should be sent separately
+   */
+  public createBiologicalFunction(patientId: number, functionType: string, value: string, date: string, token: string | null): Observable<any> {
     const httpOptions = {
       headers: new HttpHeaders({
         'Content-Type': 'application/json',
@@ -25,34 +31,47 @@ export class BiologicalFunctionsService extends BaseService<BiologicalFunctions>
       })
     };
 
-    const url = `${this.resourcePath()}/${biologicalFunctions.idPatient}/biological-functions`;
+    const url = `${this.resourcePath()}/${patientId}/biological-functions`;
     const requestBody = {
-      hunger: biologicalFunctions.hunger,
-      hydration: biologicalFunctions.hydration,
-      sleep: biologicalFunctions.sleep,
-      energy: biologicalFunctions.energy
+      functionType: functionType,
+      value: value,
+      date: date || new Date().toISOString()
     };
 
-    this.http.post(url, JSON.stringify(requestBody), httpOptions)
+    return this.http.post(url, JSON.stringify(requestBody), httpOptions)
       .pipe(
         retry(2),
         catchError(error => {
           alert("Only one biological report by Day.");
           return throwError(error);
         })
-      )
-      .subscribe(() => {
-        console.log("Biological functions created successfully.");
-      });
+      );
   }
 
-  // Fetch all biological functions to find the highest ID
-  public getAllBiologicalFunctions(): Observable<BiologicalFunctions[]> {
-    console.log('Fetching all biological functions...');
-    const url = this.resourcePath();
-    return this.http.get<BiologicalFunctions[]>(url, this.httpOptions)
-      .pipe(retry(2), catchError(this.handleError));
+  /**
+   * Legacy method - creates all biological functions separately
+   * This method sends 4 separate requests (one for each function type)
+   */
+  public createBiologicalFunctions(biologicalFunctions: BiologicalFunctions, token: string | null): void {
+    const patientId = biologicalFunctions.idPatient;
+    const date = new Date().toISOString();
+    
+    // Create separate requests for each function type
+    const functions = [
+      { type: 'hunger', value: biologicalFunctions.hunger.toString() },
+      { type: 'hydration', value: biologicalFunctions.hydration.toString() },
+      { type: 'sleep', value: biologicalFunctions.sleep.toString() },
+      { type: 'energy', value: biologicalFunctions.energy.toString() }
+    ];
+
+    functions.forEach(func => {
+      this.createBiologicalFunction(patientId, func.type, func.value, date, token).subscribe({
+        next: () => console.log(`${func.type} recorded successfully`),
+        error: (error) => console.error(`Error recording ${func.type}:`, error)
+      });
+    });
   }
+
 
   // Fetch biological functions for a specific patient
   public getBiologicalFunctionsByPatientId(patientId: number, token: string | null): Observable<any[]> {

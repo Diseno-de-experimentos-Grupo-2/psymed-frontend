@@ -41,24 +41,30 @@ export class SessionNotesComponent implements OnInit {
   private getSessionNotes(): void{
     this.sessionId = this.activatedRouter.snapshot.paramMap.get('appointmentId')!;
     this.patientId = this.activatedRouter.snapshot.paramMap.get('id')!;
+    const token = localStorage.getItem('authToken') || '';
 
-    this.noteService.findSessionNotesBySessionId(this.sessionId).subscribe((response: any) => {
-
-      this.tempSessionNotes = response;
-      this.length = this.tempSessionNotes.length;
-      console.log("len: " + this.length)
-
-      for (let id = 0; id < this.pageSize; id++) {
-
-        if (this.tempSessionNotes[id] == null){
-          break
-        }
-
-        this.sessionNotes.push(this.tempSessionNotes[id]);
+    // Note: According to the API, a session can only have one note
+    this.noteService.findSessionNotesBySessionId(Number(this.sessionId), token).subscribe((response: SessionNote) => {
+      if (response) {
+        this.tempSessionNotes = [response]; // Convert single note to array for compatibility
+        this.sessionNotes = [response];
+        this.length = 1;
+      } else {
+        this.tempSessionNotes = [];
+        this.sessionNotes = [];
+        this.length = 0;
       }
-
       console.log(response);
       console.log('session notes array', this.tempSessionNotes);
+    }, (error) => {
+      // If no note exists (404), initialize empty arrays
+      if (error.status === 404) {
+        this.tempSessionNotes = [];
+        this.sessionNotes = [];
+        this.length = 0;
+      } else {
+        console.error('Error fetching session note:', error);
+      }
     })
   }
 
@@ -117,30 +123,28 @@ export class SessionNotesComponent implements OnInit {
 
 
   private paginate(index : number) {
-
-    let actualIndex = (index * this.pageSize);
-    let maxValuePage = (index + 1) * this.pageSize;
-
-    console.log("actualindex " + actualIndex + " maxvaluepage" +  maxValuePage)
-    console.log("index: " + this.index)
-
-    this.noteService.findSessionNotesBySessionId(this.sessionId).subscribe((response) => {
+    const token = localStorage.getItem('authToken') || '';
+    
+    // Note: According to the API, a session can only have one note
+    this.noteService.findSessionNotesBySessionId(Number(this.sessionId), token).subscribe((response: SessionNote) => {
       console.log("La sesion de tarea es" + this.sessionId);
 
-      this.tempSessionNotes = response;
-
-      for (let id = actualIndex; id < maxValuePage; id++) {
-
-        if (this.tempSessionNotes[id] == null){
-          break;
-        }
-
-        this.sessionNotes.push(this.tempSessionNotes[id]);
+      if (response) {
+        this.tempSessionNotes = [response];
+        this.sessionNotes = [response];
+      } else {
+        this.tempSessionNotes = [];
+        this.sessionNotes = [];
       }
 
       console.log(response)
     }, (error) => {
-      console.error('Error fetching tasks:', error);
+      if (error.status === 404) {
+        this.tempSessionNotes = [];
+        this.sessionNotes = [];
+      } else {
+        console.error('Error fetching note:', error);
+      }
     });
   }
 

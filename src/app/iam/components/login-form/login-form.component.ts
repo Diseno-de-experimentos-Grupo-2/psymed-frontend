@@ -66,25 +66,24 @@ export class LoginFormComponent implements OnInit {
 
       this.authenticationService.signIn(signInRequest).subscribe({
         next: (response) => {
-          const storedRole = localStorage.getItem('role'); // Retrieve stored role
-          const accountRole = response.role; // Role returned from the backend
-
-          if (storedRole && storedRole !== accountRole) {
-            this.translate.get('sign-up.alert.roleMismatch', { storedRole, accountRole }).subscribe((translatedText) => {
-              alert(translatedText); // Show translated alert
-            });
-            return;
-          }
-
           // Store session data and navigate to home
+          // Role will be fetched and stored in storeSessionData
           this.authenticationService.storeSessionData(response);
           this.router.navigate(['home']);
         },
         error: (error: any) => {
-          this.translate.get('sign-up.alert.signInFailed').subscribe((translatedText) => {
+          console.error('Sign-in failed - Full error:', error);
+          console.error('Error status:', error.status);
+          console.error('Error message:', error.message);
+          console.error('Error body:', error.error);
+          
+          let errorMessage = 'sign-up.alert.signInFailed';
+          if (error.status === 404) {
+            errorMessage = 'sign-up.alert.accountNotFound';
+          }
+          this.translate.get(errorMessage).subscribe((translatedText) => {
             alert(translatedText); // Show translated alert
           });
-          console.error('Sign-in failed:', error);
         }
       });
     } else {

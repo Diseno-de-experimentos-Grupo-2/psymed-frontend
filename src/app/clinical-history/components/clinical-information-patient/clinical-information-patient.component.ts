@@ -31,12 +31,19 @@ export class ClinicalInformationPatientComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    const token = localStorage.getItem('authToken') || '';
+    
     this.store.select(selectProfileId).pipe(take(1)).subscribe(patientId => {
       if (patientId) {
-        this.patientService.getById(patientId).subscribe((patient: Patient) => {
-          this.clinicalService.getById(patient.idClinicalHistory).subscribe((clinical: ClinicalHistory) => {
-            this.clinicalHistory = clinical;
-          });
+        // Fetch clinical history directly by patient ID (as per API)
+        this.clinicalService.getClinicalHistoryByPatientId(Number(patientId), token).subscribe((clinical: ClinicalHistory) => {
+          this.clinicalHistory = clinical;
+        }, (error) => {
+          if (error.status === 404) {
+            console.log('No clinical history found for this patient');
+          } else {
+            console.error('Error loading clinical history:', error);
+          }
         });
       }
     });

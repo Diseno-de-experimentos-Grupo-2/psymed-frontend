@@ -27,17 +27,16 @@ export class ClinicalInformationComponent implements OnInit {
   ) {}
 
   loadClinicalHistory() {
-    const clinicalId = this.route.snapshot.params['clinicalHistoryId'];
-    const id = this.route.snapshot.params['id'];
+    const patientId = this.route.snapshot.params['id'];
+    const token = localStorage.getItem('authToken') || '';
 
-    // Check if clinicalId is available; log an error if missing
-    if (!clinicalId) {
-      console.error('No clinicalHistoryId found in route.');
-      return; // Exit to avoid making the API call
+    if (!patientId) {
+      console.error('No patient ID found in route.');
+      return;
     }
 
     // Fetch patient information
-    this.patientService.getById(id).subscribe(
+    this.patientService.getById(patientId).subscribe(
       (patient: Patient) => {
         this.patient = patient;
         console.log('Loaded patient:', this.patient);
@@ -47,14 +46,18 @@ export class ClinicalInformationComponent implements OnInit {
       }
     );
 
-    // Fetch clinical history information
-    this.clinicalHistoryService.getById(clinicalId).subscribe(
+    // Fetch clinical history by patient ID
+    this.clinicalHistoryService.getClinicalHistoryByPatientId(Number(patientId), token).subscribe(
       (clinicalHistory: ClinicalHistory) => {
         this.clinicalHistory = clinicalHistory;
         console.log('Loaded clinical history:', this.clinicalHistory);
       },
       (error) => {
-        console.error('Error loading clinical history:', error);
+        if (error.status === 404) {
+          console.log('No clinical history found for this patient');
+        } else {
+          console.error('Error loading clinical history:', error);
+        }
       }
     );
   }
